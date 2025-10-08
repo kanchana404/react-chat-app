@@ -48,7 +48,7 @@ export default function App() {
       <ThemeProvider>
         <UserRegistrationProvider>
           <NavigationContainer>
-            <Stack.Navigator initialRouteName="SignUpScreen" screenOptions={{ headerShown: false }}>
+            <Stack.Navigator initialRouteName="HomeScreen" screenOptions={{ headerShown: false }}>
               <Stack.Screen name="SplashScreen" component={SplashScreen} options={{ headerShown: false }} />
               <Stack.Screen name="ProfileScreen" component={ProfileScreen} options={{ headerShown: false }} />
               <Stack.Screen name="ContactScreen" component={ContactScreen} options={{ headerShown: false }} />

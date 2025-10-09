@@ -18,6 +18,7 @@ import { UserRegistrationProvider } from "./src/components/UserContext";
 import { AlertNotificationRoot } from "react-native-alert-notification";
 
 import SingleChatScreen from "./src/screens/chatScreenTabs/SingleChatScreen";
+import { WebsocketProvider } from "./src/socket/WebsocketProvider";
 
 export type RootStackParamList = {
   SplashScreen: undefined;
@@ -43,8 +44,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 //HomeScreen has 3 tabs in one page: Home,newChat,Settings
 
 export default function App() {
+  const user_Id = 1;
   return (
     <AlertNotificationRoot>
+      <WebsocketProvider userId={user_Id}>
       <ThemeProvider>
         <UserRegistrationProvider>
           <NavigationContainer>
@@ -63,6 +66,7 @@ export default function App() {
           </NavigationContainer>
         </UserRegistrationProvider>
       </ThemeProvider>
+      </WebsocketProvider>
     </AlertNotificationRoot>
   );
 }

@@ -42,9 +42,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 //this page has all the screens and navigation between them
 //ChatScreenTabs has 3 tabs: Home, Status, Calls
 //HomeScreen has 3 tabs in one page: Home,newChat,Settings
+const user_Id = 1;
 
 export default function App() {
-  const user_Id = 1;
   return (
     <AlertNotificationRoot>
       <WebSocketProvider userId={user_Id}>

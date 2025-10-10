@@ -15,6 +15,11 @@ import { RootStackParamList } from "../../../App";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useLayoutEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useSingleChat } from "../../socket/UseSIngleChat";
+import { Chat } from "../../socket/chat";
+import { useSendChat } from "../../socket/UseSendChats";
+import { useWebSocket } from "../../socket/WebSocketProvider";
+import { formatChatTime } from "../../util/DateFormatter";
 
 type Message = {
     id: number;
@@ -22,6 +27,14 @@ type Message = {
     sender: "me" | "friend";
     time: string;
     status?: "sent" | "delivered" | "read";
+};
+
+type GroupedMessage = {
+    type: 'message';
+    data: Chat;
+} | {
+    type: 'dateSeparator';
+    data: string;
 };
 
 const dummyMessage: Message[] = [
@@ -45,21 +58,61 @@ export default function SingleChatScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, "SingleChatScreen">>();
     const route = useRoute<SingleChatScreenProps['route']>();
     const { chatId, friendName, profileImage, lastSeenTime } = route.params;
-
-    const [message, setMessage] = useState<Message[]>([
-        { id: 1, text: "Hi", sender: "friend", time: "10.56 AM" },
-        { id: 2, text: "HELLO", sender: "friend", time: "10.58 AM" },
-        {
-            id: 3,
-            text: "Hey , kohomada",
-            sender: "me",
-            time: "11.56 AM",
-            status: "read",
-        },
-    ]);
-
+    const sendMessage = useSendChat();
+    const messages = useSingleChat(chatId);
+    const { userId } = useWebSocket();
 
     const [input, setInput] = useState("");
+
+    // Function to group messages by date
+    const groupMessagesByDate = (messages: Chat[]): GroupedMessage[] => {
+        if (messages.length === 0) return [];
+
+        const grouped: GroupedMessage[] = [];
+        let currentDate = '';
+
+        messages.forEach((message, index) => {
+            const messageDate = new Date(message.createdAt).toDateString();
+            
+            // Add date separator if this is a new date
+            if (messageDate !== currentDate) {
+                currentDate = messageDate;
+                const today = new Date().toDateString();
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayString = yesterday.toDateString();
+
+                let dateLabel = '';
+                if (messageDate === today) {
+                    dateLabel = 'Today';
+                } else if (messageDate === yesterdayString) {
+                    dateLabel = 'Yesterday';
+                } else {
+                    dateLabel = new Date(message.createdAt).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+
+                grouped.push({
+                    type: 'dateSeparator',
+                    data: dateLabel
+                });
+            }
+
+            // Add the message
+            grouped.push({
+                type: 'message',
+                data: message
+            });
+        });
+
+        return grouped;
+    };
+
+    const groupedMessages = groupMessagesByDate(messages);
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -92,8 +145,22 @@ export default function SingleChatScreen() {
         });
     }, [navigation, profileImage, friendName, lastSeenTime]);
 
-    const renderItem = ({ item }: { item: Message }) => {
-        const isMe = item.sender === "me";
+    const renderItem = ({ item }: { item: GroupedMessage }) => {
+        if (item.type === 'dateSeparator') {
+            return (
+                <View className="flex-row items-center my-4 mx-4">
+                    <View className="flex-1 h-px bg-gray-300" />
+                    <Text className="mx-3 text-gray-500 text-sm font-medium bg-white px-3 py-1 rounded-full">
+                        {item.data}
+                    </Text>
+                    <View className="flex-1 h-px bg-gray-300" />
+                </View>
+            );
+        }
+
+        // Render message
+        const message = item.data;
+        const isMe = message.from.id === userId; // Check if message is from current user
         return (
             <View
                 className={`my-1 px-3 py-3 max-w-[75%] 
@@ -102,20 +169,22 @@ export default function SingleChatScreen() {
                         : `rounded-tr-xl rounded-bl-xl rounded-br-xl ro self-start bg-gray-700`
                     } `}
             >
-                <Text className={`text-white text-base`}>{item.text}</Text>
+                <Text className={`text-white text-base`}>{message.message}</Text>
                 <View className="flex-row justify-end items-center mt-1">
-                    <Text className={`text-white italic text-xs me-2`}>{item.time}</Text>
+                    <Text className={`text-white italic text-xs me-2`}>
+                        {formatChatTime(message.createdAt)}
+                    </Text>
                     {isMe && (
                         <Ionicons
                             name={
-                                item.status === "read"
+                                message.status === "READ"
                                     ? "checkmark-done-sharp"
-                                    : item.status === "delivered"
+                                    : message.status === "DELIVERED"
                                         ? "checkmark-done-sharp"
                                         : "checkmark"
                             }
                             size={16}
-                            color={item.status === "read" ? "#0284c7" : "#9ca3af"}
+                            color={message.status === "READ" ? "#0284c7" : "#9ca3af"}
                         />
                     )}
                 </View>
@@ -123,21 +192,16 @@ export default function SingleChatScreen() {
         );
     };
 
-    const sendMessage = () => {
-        if (input.trim()) {
-            const newMsg: Message = {
-                id: Date.now(),
-                text: input,
-                sender: "me",
-                time: Date.now().toString(),
-                status: "sent",
-            };
-            setMessage([newMsg, ...message]);
-            setInput("");
+    const handleSendChat = () => {
+        if (!input.trim()) {
+            return;
         }
+        const messageText = input.trim();
+        // Send to server - backend will handle the response
+        sendMessage(chatId, messageText);
+        setInput("");
+    }
 
-        return !input.trim();
-    };
 
     return (
         <SafeAreaView
@@ -152,10 +216,14 @@ export default function SingleChatScreen() {
                 <StatusBar hidden={false} />
 
                 <FlatList
-                    data={message}
+                    data={groupedMessages}
                     renderItem={renderItem}
                     className="flex-1 px-3"
-                    keyExtractor={(item) => item.id.toString()}
+                    keyExtractor={(item, index) => 
+                        item.type === 'dateSeparator' 
+                            ? `date-${item.data}-${index}` 
+                            : `message-${item.data.id}-${index}`
+                    }
                     inverted
                     contentContainerStyle={{ paddingBottom: 60 }}
                 />
@@ -170,7 +238,7 @@ export default function SingleChatScreen() {
                     />
                     <TouchableOpacity
                         className="bg-green-600 w-14 h-14 items-center justify-center rounded-full"
-                        onPress={sendMessage}
+                        onPress={handleSendChat}
                     >
                         <Ionicons name="send" size={24} color="white" />
                     </TouchableOpacity>

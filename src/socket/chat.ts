@@ -24,6 +24,9 @@ export interface Chat {
   updatedAt: string;
   status: string;
   message: string;
+  imageUrl?: string;
+  messageType?: 'text' | 'image';
+  files?: string; // For storing image URLs in chat list
 }
 export interface WSRequest {
   type: string;

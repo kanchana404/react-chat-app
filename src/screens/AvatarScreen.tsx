@@ -9,9 +9,9 @@ import { useNavigation } from "@react-navigation/native";
 import { useUserRegistration } from "../components/UserContext";
 import * as Validation from "../util/Validation";
 import { ALERT_TYPE, AlertNotificationRoot, Toast } from "react-native-alert-notification";
-import { createNewAccount } from "../api/UserService";
+import { createNewAccount, verifyOTP } from "../api/UserService";
 
-type AvatarScreenProps = NativeStackNavigationProp<RootStackParamList, "ContactScreen">;
+type AvatarScreenProps = NativeStackNavigationProp<RootStackParamList, "AvatarScreen">;
 
 export default function AvatarScreen() {
     const navigation = useNavigation<AvatarScreenProps>();
@@ -99,32 +99,54 @@ export default function AvatarScreen() {
         setLoading(true);
 
         try {
+            // Send OTP after profile image selection
             const response = await createNewAccount(userData);
-            if (response.status) {
-                Toast.show({
-                    type: ALERT_TYPE.SUCCESS,
-                    title: "Success",
-                    textBody: response.message
-                })
-                navigation.replace("HomeTabs")
+            console.log('AvatarScreen - createNewAccount response:', response);
+            
+            if (response.status && response.userId) {
+                console.log('AvatarScreen - Account created successfully, userId:', response.userId);
+                
+                // Store userId in userData
+                setUserData((prev) => ({
+                    ...prev,
+                    userId: response.userId
+                }));
+                
+                if (response.otpSent) {
+                    Toast.show({
+                        type: ALERT_TYPE.SUCCESS,
+                        title: "OTP Sent",
+                        textBody: response.message,
+                    });
+                } else {
+                    // SMS failed but account created - show OTP for testing
+                    Toast.show({
+                        type: ALERT_TYPE.INFO,
+                        title: "Account Created",
+                        textBody: `SMS delivery failed. OTP: ${response.otp || 'Check server logs'}`,
+                    });
+                }
+                
+                navigation.replace("OTPVerificationScreen", {
+                    userId: response.userId
+                });
             } else {
                 Toast.show({
                     type: ALERT_TYPE.WARNING,
-                    title: "Warning",
-                    textBody: response.message
-                })
+                    title: "Error",
+                    textBody: response.message,
+                });
             }
 
         } catch (error) {
-            console.log(error)
+            console.log(error);
             Toast.show({
                 type: ALERT_TYPE.WARNING,
                 title: "Network Error",
-                textBody: "Account created locally. You can use the app offline."
-            })
-            navigation.replace("HomeTabs")
+                textBody: "Please check your internet connection and try again",
+            });
         } finally {
-            console.log("Profile setup completed");
+            console.log("OTP sending completed");
             setLoading(false);
         }
     };
@@ -168,7 +190,7 @@ export default function AvatarScreen() {
                             </Pressable>
                         )}
 
-                        {/* Avatar selection list - ALWAYS VISIBLE */}
+                        {/* Avatar selection list */}
                         <FlatList
                             data={avatar}
                             renderItem={({ item }) => (
@@ -201,14 +223,14 @@ export default function AvatarScreen() {
                             horizontal
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-                        />
+                            />
 
-                        <Text className="text-slate-700 font-bold text-xl text-center leading-7 mt-6">
-                            Choose Your Profile Picture
-                        </Text>
-                        <Text className="text-slate-500 text-sm text-center mt-2 px-4">
-                            You can always change it later
-                        </Text>
+                            <Text className="text-slate-700 font-bold text-xl text-center leading-7 mt-6">
+                                Choose Your Profile Picture
+                            </Text>
+                            <Text className="text-slate-500 text-sm text-center mt-2 px-4">
+                                You can always change it later
+                            </Text>
                     </View>
 
                     {/* Bottom Button */}
@@ -220,7 +242,9 @@ export default function AvatarScreen() {
                             {loading ? (
                                 <ActivityIndicator size={'large'} color={'white'} />
                             ) : (
-                                <Text className="text-white font-bold text-lg">Create Account</Text>
+                            <Text className="text-white font-bold text-lg">
+                                Create Account
+                            </Text>
                             )}
                         </Pressable>
                     </View>

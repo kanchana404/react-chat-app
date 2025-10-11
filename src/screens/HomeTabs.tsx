@@ -3,10 +3,13 @@ import ChatsScreen from "./HomeScreenTabs/ChatsScreen";
 import StatusScreen from "./HomeScreenTabs/StatusScreen";
 import CallsScreen from "./HomeScreenTabs/CallsScreen";
 import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "nativewind";
 
 const Tabs = createBottomTabNavigator();
 
 export default function HomeTabs() {
+  const { colorScheme } = useColorScheme();
+  
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
@@ -18,11 +21,11 @@ export default function HomeTabs() {
           return <Ionicons name={iconName as any} size={28} color={color} />;
         },
         tabBarLabelStyle: { fontSize: 16, fontweight: '808' },
-        tabBarActiveTintColor: "#16a34a",
-        tabBarInactiveTintColor: "#9ce3af",
+        tabBarActiveTintColor: "#FFCB74",
+        tabBarInactiveTintColor: colorScheme === 'dark' ? "#9ca3af" : "#6b7280",
         tabBarStyle: {
           height: 90,
-          backgroundColor: "#fff",
+          backgroundColor: colorScheme === 'dark' ? "#2f2f2f" : "#ffffff",
           paddingTop: 1
         }
       })}

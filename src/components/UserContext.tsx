@@ -6,6 +6,7 @@ export interface UserRegistrationData {
     contactNo: string,
     countryCode: string,
     profileImage: string | null;
+    userId?: number;
 }
 
 interface UserRegistrationContextType {

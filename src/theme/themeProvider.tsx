@@ -21,7 +21,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
     const { colorScheme, setColorScheme } = useColorScheme();
-    const [preference, setPreferenceState] = useState<ThemeOption>("system");
+    const [preference, setPreferenceState] = useState<ThemeOption>("dark");
     const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
@@ -32,11 +32,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
                     setPreferenceState(savedTheme);
                     setColorScheme(savedTheme);
                 } else {
-                    setPreferenceState("system");
-                    setColorScheme(Appearance.getColorScheme() ?? "light");
+                    // Default to dark theme for better user experience
+                    setPreferenceState("dark");
+                    setColorScheme("dark");
                 }
             } catch (error) {
                 console.log("Error loading theme preference:", error);
+                // Fallback to dark theme
+                setPreferenceState("dark");
+                setColorScheme("dark");
             } finally {
                 setIsReady(true);
             }
@@ -48,7 +52,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
             if (themeOption === "system") {
                 await AsyncStorage.removeItem(THEME_KEY);
                 setPreferenceState("system");
-                setColorScheme(Appearance.getColorScheme() ?? "light");
+                setColorScheme(Appearance.getColorScheme() ?? "dark");
             } else {
                 await AsyncStorage.setItem(THEME_KEY, themeOption);
                 setPreferenceState(themeOption);

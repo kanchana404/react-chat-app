@@ -16,21 +16,19 @@ import { RootStackParamList } from "../../App";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { useUserRegistration } from "../components/UserContext";
-import { createNewAccount } from "../api/UserService";
+import { loginUser } from "../api/UserService";
 
 import * as Validation from "../util/Validation";
 import { ALERT_TYPE, AlertNotificationRoot, Toast } from "react-native-alert-notification";
-import { useColorScheme } from "nativewind";
 
-type ContactScreenProps = NativeStackNavigationProp<RootStackParamList, "ContactScreen">;
+type PhoneLoginScreenProps = NativeStackNavigationProp<RootStackParamList, "PhoneLoginScreen">;
 
-export default function ContactScreen() {
-    const navigation = useNavigation<ContactScreenProps>();
+export default function PhoneLoginScreen() {
+    const navigation = useNavigation<PhoneLoginScreenProps>();
     const [show, setShow] = useState(false);
     const [countryCode, setCountryCode] = useState<CountryCode>("LK");
     const [country, setCountry] = useState<Country | null>(null);
     const [loading, setLoading] = useState(false);
-    const { colorScheme } = useColorScheme();
 
     const { userData, setUserData } = useUserRegistration();
 
@@ -45,8 +43,8 @@ export default function ContactScreen() {
 
     return (
         <AlertNotificationRoot>
-            <SafeAreaView className="flex-1 bg-gradient-to-br from-slate-50 to-slate-100 dark:bg-primary-bg">
-                <StatusBar style="light" backgroundColor="#111111" />
+            <SafeAreaView className="flex-1 bg-gradient-to-br from-slate-50 to-slate-100">
+                <StatusBar hidden={true} />
                 <KeyboardAvoidingView
                     className="flex-1 justify-between"
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -65,57 +63,21 @@ export default function ContactScreen() {
 
                         {/* Title Section */}
                         <View className="mb-10 items-center">
-                            <Text className="text-slate-700 dark:text-primary-text font-bold text-xl text-center leading-7">
-                                Create Your Account
+                            <Text className="text-slate-700 font-bold text-xl text-center leading-7">
+                                Login to Your Account
                             </Text>
-                            <Text className="text-slate-500 dark:text-gray-300 text-sm text-center mt-2 px-4">
-                                Enter your details to get started
+                            <Text className="text-slate-500 text-sm text-center mt-2 px-4">
+                                Enter your phone number to receive a verification code
                             </Text>
-                        </View>
-
-                        {/* First Name Input */}
-                        <View className="w-full mb-4">
-                            <Text className="text-slate-600 dark:text-primary-text font-semibold mb-3 text-base">
-                                First Name
-                            </Text>
-                            <View className="h-14 bg-white dark:bg-secondary-bg border border-slate-200 dark:border-gray-600 rounded-xl justify-center shadow-sm">
-                                <TextInput
-                                    className="text-slate-700 dark:text-primary-text font-medium text-base px-4 w-full h-full"
-                                    placeholder="Enter your first name"
-                                    placeholderTextColor={colorScheme === 'dark' ? '#9ca3af' : '#94a3b8'}
-                                    value={userData.firstName || ""}
-                                    onChangeText={(text) => {
-                                        setUserData((prev) => ({ ...prev, firstName: text }));
-                                    }}
-                                />
-                            </View>
-                        </View>
-
-                        {/* Last Name Input */}
-                        <View className="w-full mb-6">
-                            <Text className="text-slate-600 dark:text-primary-text font-semibold mb-3 text-base">
-                                Last Name
-                            </Text>
-                            <View className="h-14 bg-white dark:bg-secondary-bg border border-slate-200 dark:border-gray-600 rounded-xl justify-center shadow-sm">
-                                <TextInput
-                                    className="text-slate-700 dark:text-primary-text font-medium text-base px-4 w-full h-full"
-                                    placeholder="Enter your last name"
-                                    placeholderTextColor={colorScheme === 'dark' ? '#9ca3af' : '#94a3b8'}
-                                    value={userData.lastName || ""}
-                                    onChangeText={(text) => {
-                                        setUserData((prev) => ({ ...prev, lastName: text }));
-                                    }}
-                                />
-                            </View>
                         </View>
 
                         {/* Country Picker Section */}
                         <View className="w-full mb-6">
-                            <Text className="text-slate-600 dark:text-primary-text font-semibold mb-3 text-base">
+                            <Text className="text-slate-600 font-semibold mb-3 text-base">
                                 Select Country
                             </Text>
                             <Pressable
-                                className="w-full h-14 bg-white dark:bg-secondary-bg border border-slate-200 dark:border-gray-600 rounded-xl justify-between items-center flex-row px-4 shadow-sm"
+                                className="w-full h-14 bg-white border border-slate-200 rounded-xl justify-between items-center flex-row px-4 shadow-sm"
                                 onPress={() => setShow(true)}
                             >
                                 <CountryPicker
@@ -135,31 +97,31 @@ export default function ContactScreen() {
                                         setShow(false);
                                     }}
                                 />
-                                <AntDesign name="down" size={16} color={colorScheme === 'dark' ? '#9ca3af' : '#64748b'} />
+                                <AntDesign name="down" size={16} color="#64748b" />
                             </Pressable>
                         </View>
 
                         {/* Phone Input Section */}
                         <View className="w-full mb-8">
-                            <Text className="text-slate-600 dark:text-primary-text font-semibold mb-3 text-base">
+                            <Text className="text-slate-600 font-semibold mb-3 text-base">
                                 Phone Number
                             </Text>
                             <View className="flex-row gap-3">
                                 {/* Country Code Input */}
-                                <View className="w-20 h-14 bg-white dark:bg-secondary-bg border border-slate-200 dark:border-gray-600 rounded-xl justify-center items-center shadow-sm">
+                                <View className="w-20 h-14 bg-white border border-slate-200 rounded-xl justify-center items-center shadow-sm">
                                     <TextInput
-                                        className="text-slate-700 dark:text-primary-text font-medium text-base text-center w-full"
+                                        className="text-slate-700 font-medium text-base text-center w-full"
                                         value={country?.callingCode?.[0] ? `+${country.callingCode[0]}` : "+94"}
                                         editable={false}
                                     />
                                 </View>
 
                                 {/* Phone Number Input */}
-                                <View className="flex-1 h-14 bg-white dark:bg-secondary-bg border border-slate-200 dark:border-gray-600 rounded-xl justify-center shadow-sm">
+                                <View className="flex-1 h-14 bg-white border border-slate-200 rounded-xl justify-center shadow-sm">
                                     <TextInput
-                                        className="text-slate-700 dark:text-primary-text font-medium text-base px-4 w-full h-full"
+                                        className="text-slate-700 font-medium text-base px-4 w-full h-full"
                                         placeholder="Enter phone number"
-                                        placeholderTextColor={colorScheme === 'dark' ? '#9ca3af' : '#94a3b8'}
+                                        placeholderTextColor="#94a3b8"
                                         inputMode="tel"
                                         value={userData.contactNo || ""}
                                         onChangeText={(text) => {
@@ -175,27 +137,9 @@ export default function ContactScreen() {
                     <View className="px-8 pb-8">
                         <Pressable
                             className={`w-full h-14 justify-center items-center rounded-xl shadow-lg ${
-                                loading ? "bg-gray-400 dark:bg-gray-600" : "bg-gold-accent active:bg-yellow-600"
+                                loading ? "bg-gray-400" : "bg-blue-600 active:bg-green-700"
                             }`}
                             onPress={async () => {
-                                // Validate name fields for signup
-                                if (!userData.firstName || userData.firstName.trim().length < 2) {
-                                    Toast.show({
-                                        type: ALERT_TYPE.DANGER,
-                                        title: "Invalid First Name",
-                                        textBody: "Please enter a valid first name (at least 2 characters)",
-                                    });
-                                    return;
-                                }
-                                if (!userData.lastName || userData.lastName.trim().length < 2) {
-                                    Toast.show({
-                                        type: ALERT_TYPE.DANGER,
-                                        title: "Invalid Last Name",
-                                        textBody: "Please enter a valid last name (at least 2 characters)",
-                                    });
-                                    return;
-                                }
-
                                 const validCountryCode = Validation.validateCountryCode(userData.countryCode);
                                 const validContactNo = Validation.validatePhoneNo(userData.contactNo);
 
@@ -212,19 +156,72 @@ export default function ContactScreen() {
                                         textBody: validContactNo,
                                     });
                                 } else {
-                                    // Navigate to AvatarScreen for signup
-                                    navigation.replace("AvatarScreen");
+                                    // For login, call the login API
+                                    setLoading(true);
+                                    try {
+                                        console.log('PhoneLoginScreen - Attempting login with:', {
+                                            countryCode: userData.countryCode,
+                                            contactNo: userData.contactNo
+                                        });
+                                        const response = await loginUser(userData.countryCode, userData.contactNo);
+                                        console.log('PhoneLoginScreen - login response:', response);
+                                        
+                                        if (response.status && response.userId) {
+                                            if (response.isExistingUser) {
+                                                Toast.show({
+                                                    type: ALERT_TYPE.SUCCESS,
+                                                    title: "Account Found",
+                                                    textBody: "Logging you in. Please verify OTP.",
+                                                });
+                                            }
+                                            
+                                            if (response.otpSent) {
+                                                Toast.show({
+                                                    type: ALERT_TYPE.SUCCESS,
+                                                    title: "OTP Sent",
+                                                    textBody: response.message,
+                                                });
+                                            } else {
+                                                Toast.show({
+                                                    type: ALERT_TYPE.INFO,
+                                                    title: "Login",
+                                                    textBody: `SMS delivery failed. OTP: ${response.otp || 'Check server logs'}`,
+                                                });
+                                            }
+                                            
+                                            navigation.replace("OTPVerificationScreen", {
+                                                userId: response.userId
+                                            });
+                                        } else {
+                                            Toast.show({
+                                                type: ALERT_TYPE.WARNING,
+                                                title: "Login Failed",
+                                                textBody: response.message || "Failed to login. Please try again.",
+                                            });
+                                        }
+                                    } catch (error) {
+                                        console.error('Login error:', error);
+                                        Toast.show({
+                                            type: ALERT_TYPE.DANGER,
+                                            title: "Network Error",
+                                            textBody: "Failed to login. Please check your connection and try again.",
+                                        });
+                                    } finally {
+                                        setLoading(false);
+                                    }
                                 }
                             }}
                             disabled={loading}
                         >
-                            <Text className="text-black font-bold text-lg">
-                                Continue
-                            </Text>
+                            {loading ? (
+                                <Text className="text-white font-bold text-lg">Logging in...</Text>
+                            ) : (
+                                <Text className="text-white font-bold text-lg">Login</Text>
+                            )}
                         </Pressable>
 
                         {/* Terms Text */}
-                        <Text className="text-slate-400 dark:text-gray-400 text-xs text-center mt-4 px-4">
+                        <Text className="text-slate-400 text-xs text-center mt-4 px-4">
                             By continuing, you agree to our Terms of Service and Privacy Policy
                         </Text>
                     </View>

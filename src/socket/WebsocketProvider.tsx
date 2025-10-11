@@ -34,10 +34,18 @@ import React, {
         return;
       }
       
-      const wsUrl = `wss://${process.env.EXPO_PUBLIC_WS_URL}/chat?userId=${userId}`;
-      console.log('WebSocketProvider: Connecting to:', wsUrl);
+      // Check if WebSocket URL is properly configured
+      const wsUrl = process.env.EXPO_PUBLIC_WS_URL;
+      if (!wsUrl) {
+        console.error('WebSocketProvider: EXPO_PUBLIC_WS_URL is not configured');
+        setConnected(false);
+        return;
+      }
       
-      const socket = new WebSocket(wsUrl);
+      const fullWsUrl = `wss://${wsUrl}/chat?userId=${userId}`;
+      console.log('WebSocketProvider: Connecting to:', fullWsUrl);
+      
+      const socket = new WebSocket(fullWsUrl);
       socketRef.current = socket;
   
       socket.onopen = () => {
@@ -46,7 +54,12 @@ import React, {
       };
   
       socket.onclose = (event) => {
-        console.log("WebSocket disconnected:", event.code, event.reason);
+        console.log("WebSocket disconnected:", {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+          userId: userId
+        });
         setConnected(false);
         
         // Attempt to reconnect after a delay if it wasn't a clean close
@@ -64,6 +77,18 @@ import React, {
   
       socket.onerror = (error) => {
         console.error("WebSocket error:", error);
+        console.error("WebSocket error details:", {
+          type: error.type,
+          target: error.target,
+          currentTarget: error.currentTarget,
+          bubbles: error.bubbles,
+          cancelable: error.cancelable,
+          composed: error.composed,
+          defaultPrevented: error.defaultPrevented,
+          eventPhase: error.eventPhase,
+          isTrusted: error.isTrusted,
+          timeStamp: error.timeStamp
+        });
         setConnected(false);
       };
   
